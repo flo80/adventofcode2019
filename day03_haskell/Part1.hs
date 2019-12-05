@@ -1,6 +1,6 @@
 import System.IO
 import Data.List.Split
-import Data.List (intersect)
+import qualified Data.Set as Set
 
 type Position = (Int, Int)
 data Direction = U | D | R | L deriving (Eq, Show)
@@ -28,7 +28,9 @@ getAllPositions start (m:ms) =
 getMinimumOverlap :: ([Position], [Position]) -> Int
 getMinimumOverlap (p1, p2) =
   let 
-    overlaps = intersect p1 p2
+    set1 = Set.fromList p1
+    set2 = Set.fromList p2
+    overlaps = Set.toList $ Set.intersection set1 set2
     dists = map calcdist overlaps
       where calcdist (a, b) = abs a + abs b
   in
