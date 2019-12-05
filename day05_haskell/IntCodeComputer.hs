@@ -1,10 +1,13 @@
 module IntCodeComputer 
   (
     Computer
+  , State (..)
   , parseProgram
   , newComputer
   , runComputer
   , getMemory
+  , getOutput
+  , state
   , test_code
   ) where 
 
@@ -43,6 +46,9 @@ newComputer memory input =
 
 getMemory :: Computer -> [Int]
 getMemory Computer{memory = m} = toList m
+
+getOutput :: Computer -> [Int]
+getOutput Computer{output = o} = o
 
 runComputer :: Computer -> Computer
 runComputer computer@Computer{state = s} 
