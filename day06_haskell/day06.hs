@@ -5,8 +5,8 @@ main = do
   contents <- readFile "input"
   putStr "Part1: "
   print $ part1 $ contents
-  -- putStr "Part2: "
-  -- print $ part2 $ contents
+  putStr "Part2: "
+  print $ part2 $ contents
 
 
 -- Full data structure
@@ -73,3 +73,28 @@ recurseOrbits' allPairs level currentObject  =
 
 example1 = "COM)B\nB)C\nC)D\nD)E\nE)F\nB)G\nG)H\nD)I\nE)J\nJ)K\nK)L"
 testExample1 = part1 example1 == 42
+
+
+-- Part 2
+
+part2 :: String -> Int
+part2 contents = 
+  let
+    lineItems = lines $ contents
+    allPairs = map splitOrbitString lineItems
+    youPred = getAllPredecessors allPairs "YOU"
+    sanPred = getAllPredecessors allPairs "SAN"
+    common = length $ takeWhile (\x -> elem x youPred) sanPred
+  in 
+    length youPred + length sanPred - 2 * common - 2
+
+getAllPredecessors :: [(String,String)] -> String -> [String]
+getAllPredecessors allPairs currentObject 
+    | currentObject == "COM"  = ["COM"]
+    | otherwise               = getAllPredecessors allPairs parent ++ [currentObject] 
+    where
+      parent = fst $ head $ filter (\(_,b) -> b == currentObject ) allPairs
+
+
+example2 = "COM)B\nB)C\nC)D\nD)E\nE)F\nB)G\nG)H\nD)I\nE)J\nJ)K\nK)L\nK)YOU\nI)SAN\n"
+testExample2 = part2 example2 == 4
