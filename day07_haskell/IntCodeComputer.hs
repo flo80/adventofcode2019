@@ -3,10 +3,13 @@ module IntCodeComputer
   , Memory
   , State(..)
   , parseProgram
+  , interactiveComputer
   , newComputer
   , runComputer
   , getMemory
-  , getOutput
+  , resetOutput
+  , addInput
+  , output
   , state
   , test_code
   )
@@ -31,7 +34,7 @@ data Computer = Computer {
 } deriving (Show)
 
 type Memory = (Seq Int)
-data State = Running | Halted | Crashed
+data State = Running | Halted | Crashed | WaitingForInput
   deriving (Show, Eq)
 type Pointer = Int
 
@@ -49,14 +52,26 @@ newComputer memory input = Computer { memory = memory
 getMemory :: Computer -> [Int]
 getMemory Computer { memory = m } = toList m
 
-getOutput :: Computer -> [Int]
-getOutput Computer { output = o } = o
+resetOutput :: Computer -> (Computer, [Int])
+resetOutput computer =
+  let o = output computer
+      c = computer { output = [] }
+  in  (c, o)
+
+addInput :: Computer -> [Int] -> Computer
+addInput computer new =
+  let old = input computer in computer { input = old ++ new, state = Running }
+
+interactiveComputer :: Memory -> [Int] -> [Int]
+interactiveComputer code inputs =
+  let c = newComputer code inputs in output $ runComputer c
 
 runComputer :: Computer -> Computer
 runComputer computer@Computer { state = s }
-  | s == Running = runComputer $ processInstruction computer
-  | s == Halted  = computer
-  | s == Crashed = computer
+  | s == Running         = runComputer $ processInstruction computer
+  | s == WaitingForInput = computer
+  | s == Halted          = computer
+  | s == Crashed         = computer
 
 processInstruction :: Computer -> Computer
 processInstruction computer@Computer { state = Halted } = computer
@@ -64,26 +79,36 @@ processInstruction computer@Computer { memory = memory, ip = pointer, input = in
   = let i@(Instruction instruction parameters) =
             decodeInstruction memory pointer
         newPointer = case instruction of
-          JmpTrue  -> process_jmp memory i pointer
-          JmpFalse -> process_jmp memory i pointer
-          _        -> pointer + 1 + length parameters
+          JmpTrue    -> process_jmp memory i pointer
+          JmpFalse   -> process_jmp memory i pointer
+          InstrInput -> case length input of
+            0 -> pointer
+            _ -> pointer + 1 + length parameters
+          _ -> pointer + 1 + length parameters
 
         newMemory = case instruction of
           InstrAdd   -> process_math memory i
           InstrMult  -> process_math memory i
-          InstrInput -> process_input memory i $ head input
-          CmpLT      -> process_compare memory i
-          CmpEQ      -> process_compare memory i
-          _          -> memory
+          InstrInput -> case length input of
+            0 -> memory
+            _ -> process_input memory i $ head input
+          CmpLT -> process_compare memory i
+          CmpEQ -> process_compare memory i
+          _     -> memory
 
         newState = case instruction of
           InstrHalt    -> Halted
           InstrInvalid -> Crashed
-          _            -> Running
+          InstrInput   -> case length input of
+            0 -> WaitingForInput
+            _ -> Running
+          _ -> Running
 
         newInput = case instruction of
-          InstrInput -> tail input
-          _          -> input
+          InstrInput -> case length input of
+            0 -> []
+            _ -> tail input
+          _ -> input
 
         newOutput = case instruction of
           InstrOutput -> output ++ [process_output memory i]
