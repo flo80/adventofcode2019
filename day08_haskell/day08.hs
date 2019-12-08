@@ -6,26 +6,37 @@ main = do
   contents <- readFile "input"
   putStr "Part1: "
   print $ part1 $ contents
-  -- putStr "Part2: "
-  -- print $ part2 $ contents
+  putStrLn "Part2: "
+  putStrLn $ showLayer (25,6) $ part2 $ contents
   
 type Size = (Int,Int)
 
-data Color = Black | White | Transparent deriving (Eq, Show)
+data Color = Black | White | Transparent deriving (Eq)
 decodeColor :: Int -> Color
 decodeColor 0 = Black
 decodeColor 1 = White
 decodeColor 2 = Transparent
 decodeColor _ = error "Color undefined"
 
+instance Show Color where
+  show Black = " "
+  show White = "#"
+  show Transparent = " "
 
 type Pixel = Color
-type Layer = [Pixel]
+type Layer = [Pixel]  
+
+showLayer :: Size -> Layer -> String
+showLayer (width,height) l =
+  unlines rows 
+  where
+    rows = map (concat . map show) $ chunksOf width l 
+
 
 data SIF = SIF {
   size :: Size,
   layers :: [Layer]
-  } deriving (Show, Eq)
+  } deriving (Eq, Show)
 
 newSif :: Size -> [Char] -> SIF
 newSif s@(width, height) contents =
@@ -45,10 +56,15 @@ part1 contents =
 
 -- PART 1
 part2 :: String -> Layer
-part2 contents = undefined
+part2 contents = cp
     where
       ls = layers $ newSif (25,6) contents
       ps = transpose ls -- [Pixels] for each pixel
+      cp = map (foldl combinePx Transparent) ps
+
+combinePx :: Pixel -> Pixel -> Pixel
+combinePx Transparent x = x
+combinePx x _ = x
 
 example2 = "0222112222120000"
 testExample2 = (part2 example2) == [Black,White,White,Black]
