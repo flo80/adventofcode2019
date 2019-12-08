@@ -1,5 +1,5 @@
 import Data.List.Split (chunksOf)
-import Data.List (minimumBy)
+import Data.List (minimumBy, transpose)
 import Data.Char (digitToInt)
 
 main = do
@@ -10,9 +10,17 @@ main = do
   -- print $ part2 $ contents
   
 type Size = (Int,Int)
-type Pixel = Int
-type Row = [Pixel]
-type Layer = [Row]
+
+data Color = Black | White | Transparent deriving (Eq, Show)
+decodeColor :: Int -> Color
+decodeColor 0 = Black
+decodeColor 1 = White
+decodeColor 2 = Transparent
+decodeColor _ = error "Color undefined"
+
+
+type Pixel = Color
+type Layer = [Pixel]
 
 data SIF = SIF {
   size :: Size,
@@ -23,16 +31,24 @@ newSif :: Size -> [Char] -> SIF
 newSif s@(width, height) contents =
   SIF s layers
   where
-    pixels = map digitToInt contents 
-    rows = chunksOf width pixels
-    layers = chunksOf height rows
+    pixels = map (decodeColor . digitToInt) contents 
+    layers = chunksOf (width * height) pixels
 
 -- PART 1 
 part1 :: String -> Int
 part1 contents =
-  digit 1 lz * digit 2 lz
+  digit White lz * digit Transparent lz
   where 
     ls = layers $ newSif (25,6) contents
-    lz = snd $ minimumBy (\(a,_) (b,_) -> compare a b ) $ zip (map (digit 0) ls) ls
-    digit x = length . filter (== x) . concat 
+    lz = snd $ minimumBy (\(a,_) (b,_) -> compare a b ) $ zip (map (digit Black) ls) ls
+    digit x = length . filter (== x)  
 
+-- PART 1
+part2 :: String -> Layer
+part2 contents = undefined
+    where
+      ls = layers $ newSif (25,6) contents
+      ps = transpose ls -- [Pixels] for each pixel
+
+example2 = "0222112222120000"
+testExample2 = (part2 example2) == [Black,White,White,Black]
