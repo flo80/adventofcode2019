@@ -56,9 +56,9 @@ move t = step . turn
             L -> (x-1, y)
             R -> (x+1, y)
 
-newRobot :: String -> Robot
-newRobot code = 
-   Robot  { brain = newComputer code []
+newRobot :: String -> Maybe Color -> Robot
+newRobot code color = 
+   Robot  { brain = newComputer code [fromMaybe 0 color]
           , location = (0,0)
           , direction = U
           , painted = HashMap.empty
@@ -94,9 +94,31 @@ executeCommand robot@Robot{brain = c@Computer{state = WaitingForInput}} =
           newComputer2 = runComputer $ addInput (brain r) [color]
 
 part1 :: String -> Int
-part1 contents = length $ HashMap.keys $ painted $ executeCommand $ newRobot contents
+part1 contents = length $ HashMap.keys $ painted $ executeCommand $ newRobot contents Nothing
 
+part2 :: String -> String
+part2 contents = showTiles $ painted $ executeCommand $ newRobot contents $ Just 1
+
+showTiles :: Tiles -> String
+showTiles tiles = concat $ map showLine $ reverse [minimum ys .. maximum ys]
+  where
+    allPositions = HashMap.keys tiles :: [(Int,Int)]
+    (xs,ys) = unzip allPositions
+    
+    showLine :: Int -> String
+    showLine y = [showPos (x,y) |  x <- [minimum xs .. maximum xs]] ++ "\n"
+
+    showPos :: Position -> Char
+    showPos pos = showTile $ fromMaybe 0 $ HashMap.lookup pos tiles
+      where
+        showTile 0 = '\x00B7'
+        showTile 1 = '\x2588'
+        showTile x = error ("undefined color " ++ show x)
+
+    
 main = do 
   contents <- readFile "input"
   putStr "Part 1: "
   print $ part1 contents
+  putStrLn "Part 2: "
+  putStrLn $ part2 contents
