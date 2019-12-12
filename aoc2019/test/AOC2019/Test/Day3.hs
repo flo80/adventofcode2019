@@ -12,7 +12,7 @@ day3tests = TestList [part1Test, part2Test]
 part1Test = TestLabel "Day 3 - Part 1 " $ TestList $ map testExample examples
  where
   testExample (a, b, o, _) =
-    TestCase (assertEqual (show o) (day3a (a ++ "\n" ++ b)) o)
+    TestCase (assertEqual (show o) o (day3a (a ++ "\n" ++ b)))
 
 examples :: [(String, String, Int, Int)]
 examples =
@@ -31,4 +31,4 @@ examples =
 part2Test = TestLabel "Day 3 - Part 2 " $ TestList $ map testExample examples
  where
   testExample (a, b, _, o) =
-    TestCase (assertEqual (show o) (day3b (a ++ "\n" ++ b)) o)
+    TestCase (assertEqual (show o) o (day3b (a ++ "\n" ++ b)))
