@@ -5,15 +5,12 @@ module AOC2019.Day12
   )
 where
 
-import           Linear.V3
-import           Data.List                                ( tails )
-import           Data.List.Split                          ( splitOn )
-import           Data.Set                                 ( Set )
-import qualified Data.Set                      as Set
-import qualified Data.Foldable                 as F
-                                                          ( length )
-import           Control.Monad.State
+-- cool solution: https://github.com/ephemient/aoc2019/blob/hs/src/Day12.hs
 
+import           Linear.V3  
+import           Data.Maybe                               ( fromJust ) 
+import           Data.List                                ( tails, elemIndex )
+import           Data.List.Split                          ( splitOn )
 
 day12run :: IO ()
 day12run = do
@@ -56,7 +53,7 @@ day12a (contents, iterations) = totalEnergy $ last $ take iterations $ drop 1 $ 
   where
     totalEnergy :: [Moon] -> Int
     totalEnergy = sum . map energy
-      where energy (Moon (V3 px py pz) (V3 vx vy vz)) = (abs px + abs py + abs pz) *  (abs vx + abs vy + abs vz)
+      where energy (Moon p v) = (sum $ abs p) *  (sum $ abs v)
 
 
 step :: [Moon] -> [Moon]
@@ -76,6 +73,7 @@ step ms = map (applyVelocity . applyGravity ms) ms
         g m1 m2 = signum (position m2 - position m1)
 
 
+-- simplified based on reddit comments (no saving all states in set but just look for first state again)        
 day12b :: String -> Int
 day12b contents = lcm zLoop $ lcm xLoop yLoop
  where
@@ -84,21 +82,6 @@ day12b contents = lcm zLoop $ lcm xLoop yLoop
   xs (Moon (V3 px py pz) (V3 vx vy vz)) = (px, vx)
   ys (Moon (V3 px py pz) (V3 vx vy vz)) = (py, vy)
   zs (Moon (V3 px py pz) (V3 vx vy vz)) = (pz, vz)
-  xLoop = calcUntilDuplicate $ map (map xs) iterations
-  yLoop = calcUntilDuplicate $ map (map ys) iterations
-  zLoop = calcUntilDuplicate $ map (map zs) iterations
-
-calcUntilDuplicate :: Ord a => [a] -> Int
-calcUntilDuplicate xs = evalState (calcUntilDuplicateM xs) Set.empty
-
-calcUntilDuplicateM :: Ord a => [a] -> State (Set a) Int
-calcUntilDuplicateM (x : xs) = do
-  seen <- get
-  let known = Set.member x seen
-  if known
-    then do
-      let l = F.length seen
-      return l
-    else do
-      modify (Set.insert x)
-      calcUntilDuplicateM xs
+  xLoop = succ $ fromJust $ elemIndex (map xs $ head iterations)  $ map (map xs) $ drop 1 iterations
+  yLoop = succ $ fromJust $ elemIndex (map ys $ head iterations)  $ map (map ys) $ drop 1 iterations
+  zLoop = succ $ fromJust $ elemIndex (map zs $ head iterations)  $ map (map zs) $ drop 1 iterations
