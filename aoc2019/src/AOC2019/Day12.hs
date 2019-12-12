@@ -40,6 +40,7 @@ instance Show Moon where
     showV (V3 x y z) =
       "<x=" ++ show x ++ ", y=" ++ show y ++ ", z=" ++ show z ++ ">"
 
+      
 parseInput :: String -> [Moon]
 parseInput = map (moon . parseLine) . lines
  where
@@ -51,40 +52,28 @@ parseInput = map (moon . parseLine) . lines
 
 
 day12a :: (String, Int) -> Int
-day12a (contents, iterations) =
-  totalEnergy $ last $ take iterations $ drop 1 $ iterate step $ parseInput
-    contents
+day12a (contents, iterations) = totalEnergy $ last $ take iterations $ drop 1 $ iterate step $ parseInput contents
+  where
+    totalEnergy :: [Moon] -> Int
+    totalEnergy = sum . map energy
+      where energy (Moon (V3 px py pz) (V3 vx vy vz)) = (abs px + abs py + abs pz) *  (abs vx + abs vy + abs vz)
+
 
 step :: [Moon] -> [Moon]
 step ms = map (applyVelocity . applyGravity ms) ms
+  where 
+    applyVelocity :: Moon -> Moon
+    applyVelocity (Moon pos vel) = Moon (pos + vel) vel
 
-applyVelocity :: Moon -> Moon
-applyVelocity (Moon pos vel) = Moon (pos + vel) vel
+    applyGravity :: [Moon] -> Moon -> Moon
+    applyGravity ms m = m { velocity = velocity m + update m }
+      where
+        update :: Moon -> Pos
+        update m = sum $ map (g m) ms
 
-applyGravity :: [Moon] -> Moon -> Moon
-applyGravity ms m = m { velocity = velocity m + update m }
- where
-  update :: Moon -> Pos
-  update m = sum . map (g m) $ map snd $ pairsFor m
-
-  -- gets the change to velocity vector for m1
-  g :: Moon -> Moon -> Pos
-  g m1 m2 = signum (position m2 - position m1)
-
-  pairsFor :: Moon -> [(Moon, Moon)]
-  pairsFor m = filter ((== m) . fst) pairs
-
-  pairs :: [(Moon, Moon)]
-  pairs = [ (a, b) | a <- ms, b <- ms ]
-
-totalEnergy :: [Moon] -> Int
-totalEnergy = sum . map energy
- where
-  energy = product . mapMultiple [potentialEnergy, kineticEnergy]
-  potentialEnergy (Moon (V3 x y z) _) = abs x + abs y + abs z
-  kineticEnergy (Moon _ (V3 x y z)) = abs x + abs y + abs z
-  mapMultiple fs x = map ($ x) fs
-
+        -- gets the change to velocity vector for m1
+        g :: Moon -> Moon -> Pos
+        g m1 m2 = signum (position m2 - position m1)
 
 
 day12b :: String -> Int
