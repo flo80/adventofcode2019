@@ -13,4 +13,4 @@ main = do
   -- day1run
   -- day3run
   -- day12run
-  day13run
+  day13b_runInteractive

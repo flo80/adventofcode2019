@@ -3,6 +3,7 @@
 module AOC2019.Day13
   ( day13a
   , day13b
+  , day13b_runInteractive
   , day13run
   )
 where
@@ -106,62 +107,6 @@ simulateGame oPaddleBall computer = out
     _ -> error "missing state"
 
 
-day13b_interactive :: String -> IO ()
-day13b_interactive contents = do
-  let program  = "2" ++ (drop 1 contents) :: String
-  let computer = newComputer program []
-  hSetBuffering stdin  NoBuffering
-  hSetBuffering stdout NoBuffering
-  clearScreen
-  hideCursor
-  playGame 1 (Nothing, Nothing) computer
-
-
-playGame :: Int -> (Maybe Tile, Maybe Tile) -> Computer -> IO ()
-playGame loopCounter oPaddleBall computer = do
-  printStatus "Processing"
-  printLoopCounter loopCounter
-  let nc = runComputer computer
-
-  case state nc of
-    Halted -> do
-      let o = output nc
-      printStatus "Ended"
-      sequence_ $ showTiles $ parseTiles o
-      setCursorPosition 40 0
-      showCursor
-      putStr "Part 2: "
-      putStrLn $ finalScore $ parseTiles o
-
-
-    WaitingForInput -> do
-      let (nc2, o)   = resetOutput nc
-      let tiles      = parseTiles o
-      let paddleBall = getPaddleBall oPaddleBall tiles
-
-      sequence_ (showTiles $ tiles)
-      printStatus "Waiting for Input"
-      setCursorPosition 40 0
-      c <- timeout 10000 getChar
-      let i = parseInput c paddleBall
-      playGame (loopCounter + 1) paddleBall $ addInput nc2 [i]
-
-    _ -> error "missing state"
- where
-  finalScore :: [Tile] -> String
-  finalScore = foldl (++) "" . map fs
-   where
-    fs (Score score) = show score
-    fs _             = ""
-
-  printStatus :: String -> IO ()
-  printStatus status = sequence_ [setCursorPosition 1 60, putStr status]
-
-  printLoopCounter :: Int -> IO ()
-  printLoopCounter count =
-    sequence_ [setCursorPosition 2 60, putStr $ show count]
-
-
 parseInput :: Maybe Char -> (Maybe Tile, Maybe Tile) -> Int
 parseInput (Just 'j') _              = (-1)
 parseInput (Just 'l') _              = (1)
@@ -189,3 +134,85 @@ getPaddleBall (oPaddle, oBall) tiles = (paddle, ball)
   ball = case nBall of
     Nothing -> oBall
     _       -> nBall
+
+
+
+-- Interactive version
+
+-- speed is waiting time between cycle
+speed :: Int
+speed = 300000
+
+-- with cheat, computer plays if no input
+cheat :: Bool
+cheat = False
+
+
+day13b_runInteractive :: IO ()
+day13b_runInteractive = do
+  contents <- readFile "input/day13"
+  day13b_interactive contents
+  s <- getLine
+  putStrLn ""
+
+day13b_interactive :: String -> IO ()
+day13b_interactive contents = do
+  let program  = "2" ++ (drop 1 contents) :: String
+  let computer = newComputer program []
+  hSetBuffering stdin  NoBuffering
+  hSetBuffering stdout NoBuffering
+  clearScreen
+  hideCursor
+  playGame 1 (Nothing, Nothing) computer
+
+
+playGame :: Int -> (Maybe Tile, Maybe Tile) -> Computer -> IO ()
+playGame loopCounter oPaddleBall computer = do
+  printStatus "Processing                    "
+  printLoopCounter loopCounter
+  let nc = runComputer computer
+
+  case state nc of
+    Halted -> do
+      let o = output nc
+      printStatus "Ended                     "
+      sequence_ $ showTiles $ parseTiles o
+      setCursorPosition 40 0
+      showCursor
+      putStr "Part 2: "
+      putStrLn $ finalScore $ parseTiles o
+
+
+    WaitingForInput -> do
+      let (nc2, o) = resetOutput nc
+      let tiles    = parseTiles o
+      let paddleBall =
+            (case cheat of
+              True  -> getPaddleBall oPaddleBall tiles
+              False -> (Nothing, Nothing)
+            )
+
+      sequence_ (showTiles $ tiles)
+      printStatus "Waiting for Input"
+      setCursorPosition 40 0
+      -- set speed of game with timeout
+      c <- timeout speed getChar
+      let i = parseInput c paddleBall
+      playGame (loopCounter + 1) paddleBall $ addInput nc2 [i]
+
+    _ -> error "missing state"
+ where
+  finalScore :: [Tile] -> String
+  finalScore = foldl (++) "" . map fs
+   where
+    fs (Score score) = show score
+    fs _             = ""
+
+  printStatus :: String -> IO ()
+  printStatus status = sequence_ [setCursorPosition 1 60, putStr status]
+
+  printLoopCounter :: Int -> IO ()
+  printLoopCounter count =
+    sequence_ [setCursorPosition 2 60, putStr $ "loop: " ++ show count]
+
+
