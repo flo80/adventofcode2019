@@ -92,8 +92,8 @@ showWorld tiles trail =
   showStatus :: Tile -> IO ()
   showStatus world = do
     setCursorPosition 0 0
-    putStr ("Oxygen at " ++ (show $ Map.filter (== Oxygen) tiles))
-
+    putStr ("Oxygen at " ++ show x ++ " / " ++ show y)
+    where (V2 x y) = head $ Map.keys $ Map.filter (== Oxygen) tiles
 
   showTrail :: Position -> IO ()
   showTrail (V2 x y) = do
@@ -112,29 +112,28 @@ getWorld contents = (world, walkways, oxygen)
   oxygen   = head $ Map.keys $ Map.filter (== Oxygen) world
 
 day15a :: String -> Int
-day15a contents = pred $ length distance
+day15a contents = fromJust $ fromJust $ Map.lookup startPos distances
  where
   (_, walkways, oxygen) = getWorld contents
-  distance              = findShortestPath walkways oxygen startPos
+  distances             = fill walkways oxygen
 
 day15b :: String -> Int
-day15b contents = maximum $ catMaybes $ Map.elems $ fill walkways
-                                                         []
-                                                         positions
-                                                         oxygen
- where
-  (_, walkways, oxygen) = getWorld contents
-  positions             = Map.insert oxygen (Just 0) $ Map.fromList $ map
-    (\x -> (x, Nothing))
-    walkways
+day15b contents = maximum $ catMaybes $ Map.elems $ fill walkways oxygen
+  where (_, walkways, oxygen) = getWorld contents
 
-  fill
+fill :: [Position] -> Position -> Map Position (Maybe Int)
+fill walkways start = fill' walkways [] distances start
+ where
+  distances =
+    Map.insert start (Just 0) $ Map.fromList $ map (\x -> (x, Nothing)) walkways
+
+  fill'
     :: [Position]
     -> [Position]
     -> Map Position (Maybe Int)
     -> Position
     -> Map Position (Maybe Int)
-  fill walkways visited distances pos
+  fill' walkways visited distances pos
     | length neighbors == 0 = distances
     | otherwise = foldl (Map.unionWith merge) updDistances newDistances
    where
@@ -145,7 +144,7 @@ day15b contents = maximum $ catMaybes $ Map.elems $ fill walkways
     neiDistance = succ $ fromJust $ fromJust $ Map.lookup pos distances
     updDistances =
       foldl (\a n -> Map.insert n (Just neiDistance) a) distances neighbors
-    newDistances = map (fill walkways newVisited updDistances) neighbors
+    newDistances = map (fill' walkways newVisited updDistances) neighbors
 
     merge :: Maybe Int -> Maybe Int -> Maybe Int
     merge Nothing  Nothing  = Nothing
@@ -161,25 +160,24 @@ day15a_interactive = do
   let distance                  = findShortestPath walkways oxygen startPos
   sequence_ $ showWorld world (Just distance)
 
-
-findShortestPath :: [Position] -> Position -> Position -> [Position]
-findShortestPath world destination pos =
-  foldl1 (\a x -> if length x < length a then x else a)
-    $ findDistance' world [] destination pos
  where
-  findDistance'
-    :: [Position] -> [Position] -> Position -> Position -> [[Position]]
-  findDistance' world visited destination pos
-    | pos == destination = [pos : visited]
-    | otherwise          = concatMap
-      (findDistance' world newVisited destination)
-      neighbors
+  findShortestPath :: [Position] -> Position -> Position -> [Position]
+  findShortestPath world destination pos =
+    foldl1 (\a x -> if length x < length a then x else a)
+      $ findDistance' world [] destination pos
    where
-    neighbors =
-      filter (\k -> not $ k `elem` visited) $ filter (\k -> k `elem` nPos) world
-    nPos       = map (calcPos pos) [N, S, E, W]
-    newVisited = pos : visited
-
+    findDistance'
+      :: [Position] -> [Position] -> Position -> Position -> [[Position]]
+    findDistance' world visited destination pos
+      | pos == destination = [pos : visited]
+      | otherwise          = concatMap
+        (findDistance' world newVisited destination)
+        neighbors
+     where
+      neighbors = filter (\k -> not $ k `elem` visited)
+        $ filter (\k -> k `elem` nPos) world
+      nPos       = map (calcPos pos) [N, S, E, W]
+      newVisited = pos : visited
 
 
 explore :: Computer -> Tile
