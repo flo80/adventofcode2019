@@ -23,8 +23,8 @@ day14run = do
   contents <- readFile "input/day14"
   putStr "Day 14 - Part 1: "
   print $ day14a contents
-  -- putStr "Day 14 - Part 2: "
-  -- print $ day14b contents
+  putStr "Day 14 - Part 2: "
+  print $ day14b contents
   putStrLn ""
 
 type Amount = Int
@@ -131,7 +131,19 @@ divUp a b = case (x, y) of
   where (x, y) = divMod a b
 
 day14b :: String -> Int
-day14b = undefined
-  where
-    available :: Int
-    available = 1000000000000
+day14b contents = binSearch 1 1000000000000 1000000000000
+ where
+  available :: Int
+  available = 1000000000000
+
+  rules = parseInput contents
+
+  binSearch :: Int -> Int -> Int ->  Int
+  binSearch min max _ | max < min = max
+  binSearch min max target        = case compare res target of
+    LT -> binSearch (mid + 1) max target
+    GT -> binSearch min (mid - 1) target
+    EQ ->  mid
+   where
+    mid = (min + max) `div` 2
+    res = produce ("FUEL", mid) rules
