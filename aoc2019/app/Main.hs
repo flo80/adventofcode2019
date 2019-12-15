@@ -4,6 +4,7 @@ import           AOC2019.Day1
 import           AOC2019.Day3
 import           AOC2019.Day12
 import           AOC2019.Day13
+import           AOC2019.Day14
 
 main :: IO ()
 main = do
@@ -13,4 +14,5 @@ main = do
   -- day1run
   -- day3run
   -- day12run
-  day13b_runInteractive
+  -- day13b_runInteractive
+  day14run
