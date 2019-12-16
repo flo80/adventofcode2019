@@ -21,42 +21,44 @@ import           Data.List                                ( find
                                                           )
 
 import           AOC2019.Day1
+import           AOC2019.Day2
 import           AOC2019.Day3
+import           AOC2019.Day4
 import           AOC2019.Day12
 import           AOC2019.Day13
 import           AOC2019.Day14
 import           AOC2019.Day15
 import           AOC2019.Day16
 
-data Option = Option String (Maybe (IO ())) 
+data Option = Option String (Maybe (IO ()))
 instance Show Option where
-  show (Option title _ ) = show title
+  show (Option title _) = show title
 instance Eq Option where
-  (==) (Option a _ ) (Option b _ ) = a == b
+  (==) (Option a _) (Option b _) = a == b
 
 
-menuItems :: [(Option,Bool)]
+menuItems :: [(Option, Bool)]
 menuItems =
   --       Title                             Function to call             Include in runAll
-  [ (Option "All\n"                          (Just runAll)                ,False)
-  , (Option "Day 1"                          (Just day1run)               ,True)
-  , (Option "Day 2"                          (Just day2run)               ,True)
-  , (Option "Day 3"                          (Just day3run)               ,True)
-  , (Option "Day 4"                          (Nothing)                    ,True)
-  , (Option "Day 5"                          (Nothing)                    ,True)
-  , (Option "Day 6"                          (Nothing)                    ,True)
-  , (Option "Day 7"                          (Nothing)                    ,True)
-  , (Option "Day 8"                          (Nothing)                    ,True)
-  , (Option "Day 9"                          (Nothing)                    ,True)
-  , (Option "Day 10"                         (Nothing)                    ,True)
-  , (Option "Day 11"                         (Nothing)                    ,True)
-  , (Option "Day 12"                         (Just day12run)              ,True)
-  , (Option "Day 13"                         (Just day13run)              ,True)
-  , (Option "       - Part 2 interactive"    (Just day13b_runInteractive) ,False)
-  , (Option "Day 14"                         (Just day14run)              ,True)
-  , (Option "Day 15"                         (Just day15run)              ,True)
-  , (Option "       - Part 1 visualization"  (Just day15a_interactive)    ,False)
-  , (Option "Day 16"                         (Just day16run)              ,True)
+  [ (Option "All\n" (Just runAll)   , False)
+  , (Option "Day 1" (Just day1run)  , True)
+  , (Option "Day 2" (Just day2run)  , True)
+  , (Option "Day 3" (Just day3run)  , True)
+  , (Option "Day 4" (Just day4run)  , True)
+  , (Option "Day 5" (Nothing)       , True)
+  , (Option "Day 6" (Nothing)       , True)
+  , (Option "Day 7" (Nothing)       , True)
+  , (Option "Day 8" (Nothing)       , True)
+  , (Option "Day 9" (Nothing)       , True)
+  , (Option "Day 10" (Nothing)      , True)
+  , (Option "Day 11" (Nothing)      , True)
+  , (Option "Day 12" (Just day12run), True)
+  , (Option "Day 13" (Just day13run), True)
+  , (Option "       - Part 2 interactive" (Just day13b_runInteractive), False)
+  , (Option "Day 14" (Just day14run), True)
+  , (Option "Day 15" (Just day15run), True)
+  , (Option "       - Part 1 visualization" (Just day15a_interactive), False)
+  , (Option "Day 16" (Just day16run), True)
   ]
 
 options = map fst menuItems
@@ -66,7 +68,9 @@ main = do
   menu $ head options
 
 runAll :: IO ()
-runAll = sequence_ $ catMaybes $ map (\((Option t f),_) -> f) $ filter (\(o,i) -> i == True) menuItems
+runAll = sequence_ $ catMaybes $ map (\((Option t f), _) -> f) $ filter
+  (\(o, i) -> i == True)
+  menuItems
 
 menu :: Option -> IO ()
 menu selectedOption = do
