@@ -40,7 +40,7 @@ menuItems =
   --       Title                             Function to call             Include in runAll
   [ (Option "All\n"                          (Just runAll)                ,False)
   , (Option "Day 1"                          (Just day1run)               ,True)
-  , (Option "Day 2"                          (Nothing)                    ,True)
+  , (Option "Day 2"                          (Just day2run)               ,True)
   , (Option "Day 3"                          (Just day3run)               ,True)
   , (Option "Day 4"                          (Nothing)                    ,True)
   , (Option "Day 5"                          (Nothing)                    ,True)
