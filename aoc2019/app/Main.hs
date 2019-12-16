@@ -24,6 +24,7 @@ import           AOC2019.Day1
 import           AOC2019.Day2
 import           AOC2019.Day3
 import           AOC2019.Day4
+import           AOC2019.Day5
 import           AOC2019.Day12
 import           AOC2019.Day13
 import           AOC2019.Day14
@@ -39,13 +40,13 @@ instance Eq Option where
 
 menuItems :: [(Option, Bool)]
 menuItems =
-  --       Title                             Function to call             Include in runAll
+  -- Title , Function to call , Include in runAll
   [ (Option "All\n" (Just runAll)   , False)
   , (Option "Day 1" (Just day1run)  , True)
   , (Option "Day 2" (Just day2run)  , True)
   , (Option "Day 3" (Just day3run)  , True)
   , (Option "Day 4" (Just day4run)  , True)
-  , (Option "Day 5" (Nothing)       , True)
+  , (Option "Day 5" (Just day5run)  , True)
   , (Option "Day 6" (Nothing)       , True)
   , (Option "Day 7" (Nothing)       , True)
   , (Option "Day 8" (Nothing)       , True)
