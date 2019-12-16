@@ -57,7 +57,7 @@ selectedAsteroid :: [Point] -> (Point, Int)
 selectedAsteroid asteroids =
   maximumBy (\a b -> compare (snd a) (snd b)) $ zip asteroids $ map inView
                                                                     asteroids
-  where inView a = (length $ nub $ calcAngles a asteroids)
+  where inView a = (length $ nub $  calcAngles a $ filter (/= a) asteroids)
 
 
 -- upwards 0, up to 2 pi clockwise
