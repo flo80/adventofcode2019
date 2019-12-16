@@ -1,0 +1,25 @@
+module AOC2019.Test.Day{DAY}
+  ( day{DAY}tests
+  )
+where
+
+import           Test.HUnit
+import           AOC2019.Test.Common
+import           AOC2019.Day{DAY}
+
+day{DAY}tests = TestList [part1Test, part2Test]
+
+part1Test :: Test
+part1Test =
+  TestLabel "Day {DAY} - Part 1 " $ TestList $ map (testExample day{DAY}a) examples1
+
+part2Test :: Test
+part2Test =
+  TestLabel "Day {DAY} - Part 2 " $ TestList $ map (testExample day{DAY}b) examples2
+
+
+examples1 :: [(String, Int)]
+examples1 = undefined
+
+examples2 :: [(String, Int)]
+examples2 = undefined

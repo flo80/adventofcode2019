@@ -1,0 +1,25 @@
+module AOC2019.Day{DAY}
+  ( day{DAY}a
+  , day{DAY}b
+  , day{DAY}run
+  )
+where
+
+day{DAY}run :: IO ()
+day{DAY}run = do
+  contents <- readFile "input/day{DAY}"
+  putStr "Day {DAY} - Part 1: "
+  print $ day{DAY}a contents
+  putStr "Day {DAY} - Part 2: "
+  print $ day{DAY}b contents
+  putStrLn ""
+
+
+parseInput :: String -> String
+parseInput = id
+
+day{DAY}a :: String -> Int
+day{DAY}a = undefined
+
+day{DAY}b :: String -> Int
+day{DAY}b = undefined

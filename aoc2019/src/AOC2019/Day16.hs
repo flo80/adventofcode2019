@@ -14,6 +14,7 @@ day16run = do
   putStrLn $ day16a contents
   putStr "Day 16 - Part 2: "
   putStrLn $ day16b contents
+  putStrLn ""
 
 
 day16a :: String -> String
