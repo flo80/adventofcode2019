@@ -25,6 +25,7 @@ import           AOC2019.Day2
 import           AOC2019.Day3
 import           AOC2019.Day4
 import           AOC2019.Day5
+import           AOC2019.Day11
 import           AOC2019.Day12
 import           AOC2019.Day13
 import           AOC2019.Day14
@@ -52,7 +53,7 @@ menuItems =
   , (Option "Day 8" (Nothing)       , True)
   , (Option "Day 9" (Nothing)       , True)
   , (Option "Day 10" (Nothing)      , True)
-  , (Option "Day 11" (Nothing)      , True)
+  , (Option "Day 11" (Just day11run), True)
   , (Option "Day 12" (Just day12run), True)
   , (Option "Day 13" (Just day13run), True)
   , (Option "       - Part 2 interactive" (Just day13b_runInteractive), False)
