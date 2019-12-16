@@ -27,9 +27,7 @@ day16a contents = concatMap (show) $ take 8 hundredth
    where
     calcDigit :: (Int, Int) -> Int
     calcDigit (pos, value) = lastDigit $ sum $ zipWith (*) input pattern
-     where
-      pattern   = patternFor pos
-      lastDigit = (flip $ mod) 10 . abs
+      where pattern = patternFor pos
 
     patternFor :: Int -> [Int]
     patternFor digit = drop 1 $ concatMap (replicate digit) basePattern
@@ -40,6 +38,8 @@ day16a contents = concatMap (show) $ take 8 hundredth
 
 day16b :: String -> String
 day16b contents = case (length input - offset) > offset of
+  -- only calculating a partial sum from offset on (i.e. pattern all 1)
+  -- if remaining input is longer than offset, new pattern would come into play
   True  -> error "implemented calculation will fail"
   False -> concatMap (show) $ take 8 hundredth
  where
@@ -52,10 +52,12 @@ day16b contents = case (length input - offset) > offset of
 
   phase :: [Int] -> [Int]
   phase input = phase' input (sum input)
-    where
-      phase' [] _ = []
-      phase' (x : xs) partialSum =
-        (lastDigit partialSum) : phase' xs (partialSum - x)
+   where
+    phase' [] _ = []
+    -- partialSum is the total amount for the current element
+    phase' (x : xs) partialSum =
+      -- in each iteration, one more input element ignored due to pattern (i.e. sum is less)
+      (lastDigit partialSum) : phase' xs (partialSum - x)
 
-      lastDigit :: Int -> Int
-      lastDigit = (flip $ mod) 10 . abs
+lastDigit :: Int -> Int
+lastDigit = (flip $ mod) 10 . abs
