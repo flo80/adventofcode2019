@@ -14,7 +14,9 @@ import           Data.List                                ( groupBy
                                                           , group
                                                           )
 import           Data.List.Split                          ( splitWhen )
-import           Data.Maybe                               ( catMaybes )
+import           Data.Maybe                               ( catMaybes
+                                                          , fromMaybe
+                                                          )
 import           Data.Map                                 ( Map )
 import qualified Data.Map                      as Map
 import           AOC2019.IntCodeComputer
@@ -27,10 +29,10 @@ showTiles tiles intersections = concatMap line [0 .. maxY]
   (V2 maxX maxY) = maximum $ Map.keys tiles
   line y = (concat $ map gt [ (V2 x y) | x <- [0 .. maxX] ]) ++ "\n"
   gt pos = case intersections of
-    Nothing        -> show $ (Map.!) tiles pos
+    Nothing        -> fromMaybe "?" $ fmap show $ Map.lookup pos tiles
     Just positions -> case pos `elem` positions of
       True  -> "O"
-      False -> show $ (Map.!) tiles pos
+      False -> fromMaybe "?" $ fmap show $ Map.lookup pos tiles
 
 type Position = V2 Int
 
@@ -62,15 +64,51 @@ instance Enum Direction where
   toEnum 118 = D
   toEnum 60  = L
   toEnum 62  = R
+  succ U = R
+  succ R = D
+  succ D = L
+  succ L = U
+  pred U = L
+  pred L = D
+  pred D = R
+  pred R = U
+
+data Rob = Rob Position Direction deriving (Show)
+data Move = F | TL | TR deriving (Show)
+move :: Move -> Rob -> Rob
+move TL (Rob p        x) = Rob p (pred x)
+move TR (Rob p        x) = Rob p (succ x)
+move F  (Rob (V2 x y) U) = Rob (V2 (x) (y - 1)) U
+move F  (Rob (V2 x y) D) = Rob (V2 (x) (y + 1)) D
+move F  (Rob (V2 x y) L) = Rob (V2 (x - 1) (y)) L
+move F  (Rob (V2 x y) R) = Rob (V2 (x + 1) (y)) R
+pos :: Rob -> Position
+pos (Rob pos dir) = pos
+dir :: Rob -> Direction
+dir (Rob pos dir) = dir
+
+canMove :: Tiles -> Rob -> Move -> Bool
+canMove tiles rob t = case Map.lookup nextPos tiles of
+  Nothing        -> False
+  Just Space     -> False
+  Just Scaffold  -> True
+  Just (Robot _) -> True
+ where
+  nextPos = pos $ case t of
+    F -> move F rob
+    x -> move F $ move x rob
+
 
 day17run :: IO ()
 day17run = do
-  contents <- readFile "input/day17"
+  p1 <- readFile "input/day17"
   putStr "Day 17 - Part 1: "
-  let output = interactiveComputer contents []
-  print $ day17a output
-  -- putStr "Day 17 - Part 2: "
-  -- print $ day17b contents
+  let o1 = interactiveComputer p1 []
+  print $ day17a o1
+
+  let p2 = "2" ++ drop 1 p1
+  putStr "Day 17 - Part 2: "
+  print $ day17b p2
   putStrLn ""
 
 
@@ -108,4 +146,20 @@ findIntersections tiles = nub $ filter hasEnoughNeighbors relevantPositions
 
 
 day17b :: String -> Int
-day17b contents = undefined
+day17b program = last $ output $ runComputer computer
+ where
+  computer = newComputer program input
+  input    = map fromEnum (m ++ a ++ b ++ c ++ "n\n")
+  m        = "A,B,B,C,B,C,B,C,A,A\n"
+  a        = "L,6,R,8,L,4,R,8,L,12\n"
+  b        = "L,12,R,10,L,4\n"
+  c        = "L,12,L,6,L,4,L,4\n"
+
+
+findPath :: Tiles -> Rob -> [Move]
+findPath tiles rob
+  | canMove tiles rob F == True  = F : (findPath tiles $ move F rob)
+  | canMove tiles rob TL == True = TL : (findPath tiles $ move TL rob)
+  | canMove tiles rob TR == True = TR : (findPath tiles $ move TR rob)
+  | otherwise                    = []
+
