@@ -33,6 +33,7 @@ import           AOC2019.Day13
 import           AOC2019.Day14
 import           AOC2019.Day15
 import           AOC2019.Day16
+import           AOC2019.Day17
 
 data Option = Option String (Maybe (IO ()))
 instance Show Option where
@@ -63,6 +64,7 @@ menuItems =
   , (Option "Day 15" (Just day15run), True)
   , (Option "       - Part 1 visualization" (Just day15a_interactive), False)
   , (Option "Day 16" (Just day16run), True)
+  , (Option "Day 17" (Just day17run), True)
   ]
 
 options = map fst menuItems
