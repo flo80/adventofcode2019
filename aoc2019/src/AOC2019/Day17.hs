@@ -67,17 +67,17 @@ day17run :: IO ()
 day17run = do
   contents <- readFile "input/day17"
   putStr "Day 17 - Part 1: "
-  print $ day17a contents
+  let output = interactiveComputer contents []
+  print $ day17a output
   -- putStr "Day 17 - Part 2: "
   -- print $ day17b contents
   putStrLn ""
 
 
 
-day17a :: String -> Int
-day17a contents = sum $ map getAlignment intersections
+day17a :: [Int] -> Int
+day17a output = sum $ map getAlignment intersections
  where
-  output        = interactiveComputer contents []
   intersections = findIntersections $ parseOutput $ output
   getAlignment (V2 x y) = x * y
 
