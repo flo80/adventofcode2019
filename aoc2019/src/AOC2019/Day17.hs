@@ -151,16 +151,23 @@ findIntersections tiles = nub $ filter hasEnoughNeighbors relevantPositions
 
 
 day17b :: String -> Int
-day17b  = head . day17b_all
+day17b = head . day17b_all
 
 day17b_all :: String -> [Int]
 day17b_all program = map (last . output . runComputer . newComputer program2)
                          options
  where
-  program2 = "2" ++ drop 1 program
-  tiles    = parseOutput $ interactiveComputer program []
-  rob      = Rob (V2 46 22) U
-  path     = encodePath $ findPath tiles rob
+  program2           = "2" ++ drop 1 program
+  tiles              = parseOutput $ interactiveComputer program []
+
+  -- find robot
+  rob                = Rob rpos rdir
+  (rpos, Robot rdir) = head $ Map.toList $ Map.filter isRobot tiles
+  isRobot (Robot _) = True
+  isRobot _         = False
+
+  -- get path and all shortenings
+  path    = encodePath $ findPath tiles rob
   options = map (map fromEnum) $ map (formatPathForInput) $ shortenPath path
 
 
@@ -182,8 +189,11 @@ encodePath = concat . map replace . group . map show
 -- inspired by https://github.com/jan-g/advent2019/blob/master/src/Day17.hs#L299            
 shortenPath :: [String] -> [([String], [String], [String], [String])]
 shortenPath path =
+  -- m cannot be longer than 20 characters when encoded
   (filter (\(a, b, c, m) -> expL m <= 20))
+    -- in m, only a,b,c, can appear
     $ filter (\(a, b, c, m) -> filterM m)
+    -- get all possible combinations
     $ [ (a, b, c, m)
       | a <- candA
       , b <- (candB a)
@@ -191,9 +201,11 @@ shortenPath path =
       , m <- (candM a b c)
       ]
  where
+  -- get all candidates for a (i.e. all possible substrings of path which are shorter than 20 when encoded)
   candA :: [[String]]
   candA = filter (\x -> expL x <= 20) $ tail $ inits path
 
+  -- get all candidates for b, as for a but a is not allowed to appear in path
   candB :: [String] -> [[String]]
   candB a =
     filter (not . null)
@@ -213,9 +225,11 @@ shortenPath path =
       $ inits
       $ r'b a b
 
+  -- m is the leftover main
   candM :: [String] -> [String] -> [String] -> [[String]]
   candM a b c = [r'c a b c]
 
+  -- remainder of path after taking out a / b / c
   r'a a = replacePath path a "A"
   r'b a b = replacePath (r'a a) b "B"
   r'c a b c = replacePath (r'b a b) c "C"
@@ -227,6 +241,7 @@ shortenPath path =
 
 replacePath :: [String] -> [String] -> String -> [String]
 replacePath [] repl code = []
+-- when the beginning of the current path is equal to the replacement, replace it with code
 replacePath path repl code | take lr path == repl =
   code : replacePath (drop lr path) repl code
   where lr = length repl
