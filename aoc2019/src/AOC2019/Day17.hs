@@ -12,6 +12,8 @@ import           Data.List                                ( groupBy
                                                           , sort
                                                           , nub
                                                           , group
+                                                          , intercalate
+                                                          , inits
                                                           )
 import           Data.List.Split                          ( splitWhen )
 import           Data.Maybe                               ( catMaybes
@@ -20,6 +22,7 @@ import           Data.Maybe                               ( catMaybes
 import           Data.Map                                 ( Map )
 import qualified Data.Map                      as Map
 import           AOC2019.IntCodeComputer
+import           Control.Monad
 
 type Tiles = Map Position TileType
 
@@ -74,7 +77,12 @@ instance Enum Direction where
   pred R = U
 
 data Rob = Rob Position Direction deriving (Show)
-data Move = F | TL | TR deriving (Show)
+data Move = F | TL | TR
+instance Show Move where
+  show F  = "1"
+  show TL = "L"
+  show TR = "R"
+
 move :: Move -> Rob -> Rob
 move TL (Rob p        x) = Rob p (pred x)
 move TR (Rob p        x) = Rob p (succ x)
@@ -101,14 +109,12 @@ canMove tiles rob t = case Map.lookup nextPos tiles of
 
 day17run :: IO ()
 day17run = do
-  p1 <- readFile "input/day17"
+  contents <- readFile "input/day17"
   putStr "Day 17 - Part 1: "
-  let o1 = interactiveComputer p1 []
+  let o1 = interactiveComputer contents []
   print $ day17a o1
-
-  let p2 = "2" ++ drop 1 p1
   putStr "Day 17 - Part 2: "
-  print $ day17b p2
+  print $ day17b contents
   putStrLn ""
 
 
@@ -144,16 +150,18 @@ findIntersections tiles = nub $ filter hasEnoughNeighbors relevantPositions
   nPos pos = map (+ pos) [V2 (-1) (0), V2 (1) (0), V2 (0) (1), V2 (0) (-1)]
 
 
-
 day17b :: String -> Int
-day17b program = last $ output $ runComputer computer
+day17b  = head . day17b_all
+
+day17b_all :: String -> [Int]
+day17b_all program = map (last . output . runComputer . newComputer program2)
+                         options
  where
-  computer = newComputer program input
-  input    = map fromEnum (m ++ a ++ b ++ c ++ "n\n")
-  m        = "A,B,B,C,B,C,B,C,A,A\n"
-  a        = "L,6,R,8,L,4,R,8,L,12\n"
-  b        = "L,12,R,10,L,4\n"
-  c        = "L,12,L,6,L,4,L,4\n"
+  program2 = "2" ++ drop 1 program
+  tiles    = parseOutput $ interactiveComputer program []
+  rob      = Rob (V2 46 22) U
+  path     = encodePath $ findPath tiles rob
+  options = map (map fromEnum) $ map (formatPathForInput) $ shortenPath path
 
 
 findPath :: Tiles -> Rob -> [Move]
@@ -163,3 +171,73 @@ findPath tiles rob
   | canMove tiles rob TR == True = TR : (findPath tiles $ move TR rob)
   | otherwise                    = []
 
+encodePath :: [Move] -> [String]
+encodePath = concat . map replace . group . map show
+ where
+  replace :: [String] -> [String]
+  replace x | length x == 1 = x
+            | otherwise     = [show $ length x]
+
+
+-- inspired by https://github.com/jan-g/advent2019/blob/master/src/Day17.hs#L299            
+shortenPath :: [String] -> [([String], [String], [String], [String])]
+shortenPath path =
+  (filter (\(a, b, c, m) -> expL m <= 20))
+    $ filter (\(a, b, c, m) -> filterM m)
+    $ [ (a, b, c, m)
+      | a <- candA
+      , b <- (candB a)
+      , c <- (candC a b)
+      , m <- (candM a b c)
+      ]
+ where
+  candA :: [[String]]
+  candA = filter (\x -> expL x <= 20) $ tail $ inits path
+
+  candB :: [String] -> [[String]]
+  candB a =
+    filter (not . null)
+      $ filter (\x -> expL x <= 20)
+      $ filterOut "A"
+      $ tail
+      $ inits
+      $ r'a a
+
+  candC :: [String] -> [String] -> [[String]]
+  candC a b =
+    filter (not . null)
+      $ filter (\x -> expL x <= 20)
+      $ filterOut "B"
+      $ filterOut "A"
+      $ tail
+      $ inits
+      $ r'b a b
+
+  candM :: [String] -> [String] -> [String] -> [[String]]
+  candM a b c = [r'c a b c]
+
+  r'a a = replacePath path a "A"
+  r'b a b = replacePath (r'a a) b "B"
+  r'c a b c = replacePath (r'b a b) c "C"
+
+  filterM m = all (\x -> x == "A" || x == "B" || x == "C") m == True
+  filterOut x = map (takeWhile (/= x)) . map (dropWhile (== x))
+  expL = length . intercalate ","
+
+
+replacePath :: [String] -> [String] -> String -> [String]
+replacePath [] repl code = []
+replacePath path repl code | take lr path == repl =
+  code : replacePath (drop lr path) repl code
+  where lr = length repl
+replacePath (x : xs) repl code = x : replacePath xs repl code
+
+
+formatPathForInput :: ([String], [String], [String], [String]) -> String
+formatPathForInput (a, b, c, m) = input
+ where
+  input = m' ++ a' ++ b' ++ c' ++ "n\n"
+  a'    = intercalate "," a ++ "\n"
+  b'    = intercalate "," b ++ "\n"
+  c'    = intercalate "," c ++ "\n"
+  m'    = intercalate "," m ++ "\n"
