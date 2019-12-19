@@ -35,6 +35,7 @@ import           AOC2019.Day15
 import           AOC2019.Day16
 import           AOC2019.Day17
 import           AOC2019.Day18
+import           AOC2019.Day19
 
 data Option = Option String (Maybe (IO ()))
 instance Show Option where
@@ -46,27 +47,28 @@ instance Eq Option where
 menuItems :: [(Option, Bool)]
 menuItems =
   -- Title , Function to call , Include in runAll
-  [ (Option "All\n" (Just runAll)   , False)
-  , (Option "Day 1" (Just day1run)  , True)
-  , (Option "Day 2" (Just day2run)  , True)
-  , (Option "Day 3" (Just day3run)  , True)
-  , (Option "Day 4" (Just day4run)  , True)
-  , (Option "Day 5" (Just day5run)  , True)
-  , (Option "Day 6" (Nothing)       , True)
-  , (Option "Day 7" (Nothing)       , True)
-  , (Option "Day 8" (Nothing)       , True)
-  , (Option "Day 9" (Just day9run)  , True)
-  , (Option "Day 10" (Just day10run), True)
-  , (Option "Day 11" (Just day11run), True)
-  , (Option "Day 12" (Just day12run), True)
-  , (Option "Day 13" (Just day13run), True)
+  [ (Option "All\n" (Just runAll)                  , False)
+  , (Option "Day 1" (Just day1run)                 , True)
+  , (Option "Day 2" (Just day2run)                 , True)
+  , (Option "Day 3" (Just day3run)                 , True)
+  , (Option "Day 4" (Just day4run)                 , True)
+  , (Option "Day 5" (Just day5run)                 , True)
+  , (Option "Day 6" (Nothing)                      , True)
+  , (Option "Day 7" (Nothing)                      , True)
+  , (Option "Day 8" (Nothing)                      , True)
+  , (Option "Day 9" (Just day9run)                 , True)
+  , (Option "Day 10" (Just day10run)               , True)
+  , (Option "Day 11" (Just day11run)               , True)
+  , (Option "Day 12" (Just day12run)               , True)
+  , (Option "Day 13" (Just day13run)               , True)
   , (Option "       - Part 2 interactive" (Just day13b_runInteractive), False)
-  , (Option "Day 14" (Just day14run), True)
-  , (Option "Day 15" (Just day15run), True)
+  , (Option "Day 14" (Just day14run)               , True)
+  , (Option "Day 15" (Just day15run)               , True)
   , (Option "       - Part 1 visualization" (Just day15a_interactive), False)
-  , (Option "Day 16" (Just day16run), True)
-  , (Option "Day 17" (Just day17run), True)
-  , (Option "Day 18" (Just day18run), True)
+  , (Option "Day 16" (Just day16run)               , True)
+  , (Option "Day 17" (Just day17run)               , True)
+  , (Option "Day 18 - doesn't work" (Just day18run), False)
+  , (Option "Day 19" (Just day19run)               , True)
   ]
 
 options = map fst menuItems
