@@ -69,16 +69,18 @@ getC (Key  c) = c
 getC (Door c) = c
 getC _        = error "Not a key or door"
 
-isReachable :: Set Char -> Tile -> Bool
-isReachable _    Wall     = False
-isReachable _    Open     = True
-isReachable _    Entrance = True
-isReachable _    (Key  _) = True
-isReachable keys (Door x) = Set.member x keys
+isEntrance Entrance = True
+isEntrance _        = False
+isKey (Key _) = True
+isKey _       = False
+isDoor (Door _) = True
+isDoor _        = False
+isWalkable Wall = False
+isWalkable _    = True
 
 
 day18a :: String -> Int
-day18a contents = length $ snd $ findAllKeys tiles player
+day18a contents = snd $ findAllKeys tiles player
  where
   tiles               = parseInput contents
   (keys, missingKeys) = listKeys tiles
@@ -86,29 +88,63 @@ day18a contents = length $ snd $ findAllKeys tiles player
 
 
 type Path = [Position]
-findAllKeys :: Tiles -> Player -> (Player, Path)
-findAllKeys tiles player = minimumBy (compare `on` (length . snd)) options
-  where options = findAllNextSteps tiles player []
+findAllKeys :: Tiles -> Player -> (Player, Int)
+findAllKeys tiles player = minimumBy (compare `on` snd) options
+ where
+  options = findAllNextSteps tiles allD player 0
+  allD = allDistances tiles
 
-findAllNextSteps :: Tiles -> Player -> Path -> [(Player, Path)]
-findAllNextSteps tiles player@Player {..} path
-  | Set.null missingKeys = [(player, path)]
-  | otherwise = concatMap (\(pl, pa) -> findAllNextSteps tiles pl pa)
+findAllNextSteps
+  :: Tiles
+  -> Map (Position, Position) (Int, [Char], [Char])
+  -> Player
+  -> Int
+  -> [(Player, Int)]
+findAllNextSteps tiles allD player@Player {..} prevDist
+  | Set.null missingKeys = [(player, prevDist)]
+  | Map.null possibleNextHops = error "no possible hops"
+  | otherwise = concatMap (\(pl, pa) -> findAllNextSteps tiles allD pl pa)
                           possibleContinuations
  where
-  possibleContinuations :: [(Player, Path)]
+  possibleContinuations :: [(Player, Int)]
   possibleContinuations =
-    map (\x -> (newPlayer x, (init $ wayToDest x) ++ path)) $ reachableKeys
+    map createContinuations $ Map.toList $ possibleNextHops
 
-  reachableKeys = filter canReach $ toList missingKeys
-  canReach x = length (findShortestPathWith tiles (isReachable keys) position x) > 0
+  createContinuations
+    :: ((Position, Position), (Int, [Char], [Char])) -> (Player, Int)
+  createContinuations ((_, x), (dist, _, getK)) =
+    (newPlayer x getK, prevDist + dist)
 
-  wayToDest :: Position -> Path
-  wayToDest x = findShortestPathWith tiles (isReachable keys) position x
+  possibleNextHops :: Map (Position, Position) (Int, [Char], [Char])
+  possibleNextHops = Map.filterWithKey
+    (\(a, b) (_, reqK, _) ->
+      a
+        == position
+        && Set.member b missingKeys
+        && all (\k -> Set.member k keys) reqK
+    )
+    allD
 
-  newPlayer :: Position -> Player
-  newPlayer x =
-    Player x (Set.insert (getC $ tiles ! x) keys) (Set.delete x missingKeys)
+  newPlayer :: Position -> [Char] -> Player
+  newPlayer x newKeys = Player x ks (Set.delete x missingKeys)
+    where ks = Set.union keys $ Set.fromList newKeys
+
+-- calculate  between a,b, distance, doors (i.e. keys required), keys on the way
+allDistances :: Tiles -> Map (Position, Position) (Int, [Char], [Char])
+allDistances tiles = Map.fromList $ map
+  (\(a, b) -> ((a, b), (getDistance a b, getDoors a b, getKeys a b)))
+  allPairs
+ where
+  getPath a b = findShortestPath walkways a b
+  getDistance a b = pred $ length $ getPath a b
+  getDoors a b = map getC $ filter isDoor $ map (\x -> tiles ! x) $ getPath a b
+  getKeys a b = map getC $ filter isKey $ map (\x -> tiles ! x) $ getPath a b
+
+  -- could optimize since ways should be symmetrical
+  allPairs       = [ (a, b) | a <- allStartpoints, b <- allEndpoints, a /= b ]
+  allStartpoints = Map.keys $ Map.filter (\x -> isKey x || isEntrance x) tiles
+  allEndpoints   = Map.keys $ Map.filter isKey tiles
+  walkways       = Map.filter isWalkable tiles
 
 
 day18b :: String -> Int
