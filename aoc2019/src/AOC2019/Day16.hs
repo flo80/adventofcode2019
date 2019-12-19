@@ -6,6 +6,8 @@ module AOC2019.Day16
 where
 
 import           Data.Char                                ( digitToInt )
+import qualified Data.Vector.Unboxed           as V
+
 
 day16run :: IO ()
 day16run = do
@@ -49,16 +51,11 @@ day16b contents = case (length input - offset) > offset of
 
   -- elements before the offset can be ignored since base pattern is 0
   relevantInput = drop offset input
-  hundredth     = last $ take 101 $ iterate phase relevantInput
 
-  phase :: [Int] -> [Int]
-  phase input = phase' input (sum input)
-   where
-    phase' [] _ = []
-    -- partialSum is the total amount for the current element
-    phase' (x : xs) partialSum =
-      -- in each iteration, one more input element ignored due to pattern (i.e. sum is less)
-      (lastDigit partialSum) : phase' xs (partialSum - x)
+  -- performance optimization from https://www.reddit.com/r/adventofcode/comments/ebai4g/2019_day_16_solutions/fb6gzyd/
+  hundredth     = V.toList $ (!! 100) $ iterate phase $ V.fromList relevantInput
+  phase input = V.map lastDigit $ V.scanr1' (+) input
+
 
 lastDigit :: Int -> Int
 lastDigit = (flip $ mod) 10 . abs

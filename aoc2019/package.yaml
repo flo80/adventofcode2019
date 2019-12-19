@@ -26,6 +26,7 @@ dependencies:
 - HUnit 
 - mtl
 - ansi-terminal
+- vector
 
 library:
   source-dirs: src
