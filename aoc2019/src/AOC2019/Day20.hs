@@ -151,7 +151,7 @@ findDistance tiles destination start = findDistance'
      where
       minDist (aPos, aDist) bPos bDist = case (bDist < aDist) of
         True -> (bPos, bDist)
-        flse -> (aPos, aDist)
+        False -> (aPos, aDist)
     newUnvisited = Map.delete nextHop tempUnvisited
     newVisited   = Map.insert nextHop dist visited
 
