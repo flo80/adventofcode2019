@@ -25,7 +25,7 @@ import qualified Data.Map                      as Map
 import           Data.Set                                 ( Set )
 import qualified Data.Set                      as Set
 import           Linear.V2
-
+import Debug.Trace
 
 day20run :: IO ()
 day20run = do
@@ -161,7 +161,7 @@ day20b contents = findDistance end start
  where
   (tiles, start, end) = parseInput contents
   (maxX,maxY)      =   foldl (\(ax,ay) (V2 nx ny) -> (max ax nx,max ay ny)) (0,0) $ Map.keys tiles
-  maxLevel            = (Map.size $ Map.filter isPortal tiles) -- this might not be true
+  maxLevel            = (Map.size $ Map.filter isPortal tiles) `div` 2 -- this might not be true
    where
     isPortal (Portal _) = True
     isPortal Walkway  = False
@@ -206,6 +206,7 @@ day20b contents = findDistance end start
           where 
             pred = snd <$> fromJust $ Map.lookup current visited
 
+
         findDistance'
           :: Map (Position, Int) (Int, Maybe (Position, Int))  -- visited incl predecessor
           -> Map (Position, Int) (Int, Maybe (Position, Int)) -- unvisited
@@ -220,8 +221,23 @@ day20b contents = findDistance end start
                                       nextHop
                                       
           where
+            -- pretending map extends to multiple levels
+            lookupUnvisited :: (Position,Int) -> Maybe ((Position, Int) ,(Int, Maybe (Position, Int)))
+            lookupUnvisited (pos,level) = 
+                case directResult of 
+                  Just res -> Just ((pos,level),res)
+                  Nothing -> case level > 10  of -- experimental limitation to 10 levels
+                    True  -> Nothing
+                    False -> case Map.member pos tiles of
+                      True  ->  Just ((pos,level),(99999, Nothing)) -- faking responses for non existent levels 
+                      False -> Nothing
+              where 
+                directResult = Map.lookup (pos,level) unvisited 
+    
+            nbList :: [(Position,Int)]
             nbList = neighbors current 
-            nbDist =
+            nbDist :: Map (Position, Int) (Int, Maybe (Position, Int))
+            nbDist = --Map.fromList $ map (\(k, v) -> (k,calcDist v)) $ catMaybes $ map lookupUnvisited nbList
               Map.map calcDist $ Map.filterWithKey (\k _ -> k `elem` nbList) unvisited
 
             ownDist = fst $ visited ! current
