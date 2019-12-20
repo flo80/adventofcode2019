@@ -6,9 +6,9 @@ module AOC2019.Day20
 where
 
 import           AOC.Common
-import           Control.Applicative
-import           Data.Maybe                               ( fromMaybe
-                                                          , fromJust
+-- Switch to 3rd party search algorithms
+import           Algorithm.Search
+import           Data.Maybe                               ( fromJust
                                                           , catMaybes
                                                           )
 import           Data.Char                                ( isUpper )
@@ -22,10 +22,7 @@ import           Data.Map                                 ( Map
                                                           , (!)
                                                           )
 import qualified Data.Map                      as Map
-import           Data.Set                                 ( Set )
-import qualified Data.Set                      as Set
 import           Linear.V2
-import Debug.Trace
 
 day20run :: IO ()
 day20run = do
@@ -97,162 +94,61 @@ parseInput contents = (tiles, start, end)
 
 
 day20a :: String -> Int
-day20a contents = findDistance tiles end start
+day20a contents = fst $ fromJust $ dijkstra (getNeighbors)
+                                            (\_ _ -> 1)
+                                            (== end)
+                                            start
  where
   (tiles, start, end) = parseInput contents
+  getNeighbors pos = filter (\p -> Map.member p tiles) $ neighbors pos
 
-  neighbors :: Tiles -> Position -> [Position]
-  neighbors tiles pos = case t of
+  neighbors :: Position -> [Position]
+  neighbors pos = case t of
     Portal to -> to : getNeighbors'
     Walkway   -> getNeighbors'
    where
     t             = tiles ! pos
-    getNeighbors' = Map.keys $ Map.filterWithKey (\k _ -> k `elem` nb) tiles
+    getNeighbors' = filter (\p -> Map.member p tiles) nb
     nb            = map (+ pos) [up, down, left, right]
 
-  findDistance :: Tiles -> Position -> Position -> Int
-  findDistance tiles destination start = findDistance'
-    tiles
-    (Map.singleton start 0)
-    (Map.delete start $ Map.map (\_ -> 9999999) tiles)
-    destination
-    start
-   where
-    findDistance'
-      :: Tiles
-      -> Map Position Int
-      -> Map Position Int
-      -> Position
-      -> Position
-      -> Int
-    findDistance' tiles visited unvisited destination current
-      | current == destination = visited ! current
-      | otherwise              = findDistance'
-        tiles
-        newVisited
-        newUnvisited
-        destination
-        nextHop
-
-     where
-      nbList = neighbors tiles current
-      nbDist :: Map Position Int
-      nbDist =
-        Map.map calcDist $ Map.filterWithKey (\k _ -> k `elem` nbList) unvisited
-
-      ownDist = visited ! current
-      calcDist d = min d (ownDist + 1)
-
-      tempUnvisited :: Map Position Int
-      tempUnvisited   = Map.union nbDist unvisited
-      (nextHop, dist) = Map.foldlWithKey minDist
-                                         ((V2 0 0), 9999999)
-                                         tempUnvisited
-       where
-        minDist (aPos, aDist) bPos bDist = case (bDist < aDist) of
-          True  -> (bPos, bDist)
-          False -> (aPos, aDist)
-      newUnvisited = Map.delete nextHop tempUnvisited
-      newVisited   = Map.insert nextHop dist visited
 
 
 day20b :: String -> Int
-day20b contents = findDistance end start
+day20b contents =
+  fst
+    $ fromJust
+  -- 42 heuristics from https://www.reddit.com/r/adventofcode/comments/ed5ei2/2019_day_20_solutions/fbg5pmk/
+    $ aStar (getNeighbors)
+            (\_ _ -> 1)
+            (\(p, l) -> max 0 (l - 1) * 42)
+            (== (end, 0))
+            (start, 0)
  where
   (tiles, start, end) = parseInput contents
-  (maxX,maxY)      =   foldl (\(ax,ay) (V2 nx ny) -> (max ax nx,max ay ny)) (0,0) $ Map.keys tiles
-  maxLevel            = (Map.size $ Map.filter isPortal tiles) `div` 2 -- this might not be true
-   where
-    isPortal (Portal _) = True
-    isPortal Walkway  = False
+  (maxX, maxY) = foldl (\(ax, ay) (V2 nx ny) -> (max ax nx, max ay ny)) (0, 0)
+    $ Map.keys tiles
+
+  getNeighbors (pos, level) =
+    filter (\(p, l) -> Map.member p tiles) $ neighbors (pos, level)
 
   -- position and level 
-  neighbors :: (Position, Int) -> [(Position,Int)]
-  neighbors (pos,level) = case t of
+  neighbors :: (Position, Int) -> [(Position, Int)]
+  neighbors (pos, level) = case t of
     -- check where portal leads to
-    Portal (V2 x y) -> case min x y < 5  || x > (maxX - 5) || y > (maxY - 5) of
-      True -> (V2 x y,level +1) : getNeighbors' -- leads to outer ring, i.e. is inner portals
+    Portal (V2 x y) -> case min x y < 5 || x > (maxX - 5) || y > (maxY - 5) of
+      True  -> (V2 x y, level + 1) : getNeighbors' -- leads to outer ring, i.e. is inner portals
       False -> case level == 0 of -- outer portal leading inside
-        True -> getNeighbors' -- level 0 outer portals closed
-        False -> (V2 x y,level -1) : getNeighbors' 
+        True  -> getNeighbors' -- level 0 outer portals closed
+        False -> (V2 x y, level - 1) : getNeighbors'
 
     -- on levels below 0, AA and ZZ are walls
-    Walkway   -> case level == 0 of 
-      False -> filter (\(p,_) -> p `notElem` [start, end]) $ getNeighbors'
+    Walkway -> case level == 0 of
+      False -> filter (\(p, _) -> p `notElem` [start, end]) $ getNeighbors'
       True  -> getNeighbors'
    where
-    t             = tiles ! pos
-    getNeighbors' = map (\p -> (p,level)) $ Map.keys $ Map.filterWithKey (\k _ -> k `elem` nb) tiles
-    nb            = map (+ pos) [up, down, left, right]
+    t = tiles ! pos
+    getNeighbors' =
+      map (\p -> (p, level)) $ filter (\p -> Map.member p tiles) nb
+    nb = map (+ pos) [up, down, left, right]
 
-  findDistance :: Position -> Position -> Int
-  findDistance destination start = fst $  findDistance'
-    (Map.singleton (start, 0) (0,Nothing)) -- visited, incl distance and predecessor on path
-    ( Map.delete (start, 0)
-    $ Map.fromList
-    $ [ ((pos, lvl), (99999, Nothing))
-      | pos <- (Map.keys $ tiles)
-      , lvl <- [0 .. maxLevel]
-      ]
-    ) -- unvisited
-    (destination,0) -- destination
-    (start,0) -- current
-      where
-        getPath :: Map (Position, Int) (Int, Maybe (Position, Int)) -> (Position,Int) -> [(Position,Int)]
-        getPath visited current = 
-          case pred of 
-            Nothing -> [current]
-            Just pos -> current: (getPath visited pos)
-          where 
-            pred = snd <$> fromJust $ Map.lookup current visited
-
-
-        findDistance'
-          :: Map (Position, Int) (Int, Maybe (Position, Int))  -- visited incl predecessor
-          -> Map (Position, Int) (Int, Maybe (Position, Int)) -- unvisited
-          -> (Position, Int) -- destination
-          -> (Position, Int) -- current
-          -> (Int, [(Position, Int)])
-        findDistance' visited unvisited destination current 
-          | current == destination = (fst $ visited ! current, getPath visited current)
-          | otherwise = findDistance' newVisited
-                                      newUnvisited
-                                      destination
-                                      nextHop
-                                      
-          where
-            -- pretending map extends to multiple levels
-            lookupUnvisited :: (Position,Int) -> Maybe ((Position, Int) ,(Int, Maybe (Position, Int)))
-            lookupUnvisited (pos,level) = 
-                case directResult of 
-                  Just res -> Just ((pos,level),res)
-                  Nothing -> case level > 10  of -- experimental limitation to 10 levels
-                    True  -> Nothing
-                    False -> case Map.member pos tiles of
-                      True  ->  Just ((pos,level),(99999, Nothing)) -- faking responses for non existent levels 
-                      False -> Nothing
-              where 
-                directResult = Map.lookup (pos,level) unvisited 
-    
-            nbList :: [(Position,Int)]
-            nbList = neighbors current 
-            nbDist :: Map (Position, Int) (Int, Maybe (Position, Int))
-            nbDist = --Map.fromList $ map (\(k, v) -> (k,calcDist v)) $ catMaybes $ map lookupUnvisited nbList
-              Map.map calcDist $ Map.filterWithKey (\k _ -> k `elem` nbList) unvisited
-
-            ownDist = fst $ visited ! current
-            calcDist (d,pred) = case d < (ownDist + 1) of 
-              True -> (d,pred)
-              False -> (ownDist + 1, Just current)
-
-            tempUnvisited   =  Map.union nbDist unvisited
-            (nextHop, dist) =  Map.foldlWithKey minDist (((V2 0 0),0), (9999999, Nothing)) tempUnvisited
-              where
-                minDist (aPos, (aDist,aPred)) bPos (bDist,bPred) = 
-                  case (bDist < aDist) of
-                    True  -> (bPos, (bDist,bPred))
-                    False -> (aPos, (aDist,aPred))
-
-            newUnvisited = Map.delete nextHop tempUnvisited
-            newVisited   = Map.insert nextHop dist visited
 
