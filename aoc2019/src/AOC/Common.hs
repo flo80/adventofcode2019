@@ -1,5 +1,6 @@
 module AOC.Common
   ( Position
+  , parseCharacterArrayFromString
   , parseTilesFromString
   , parseTilesFromStringWith
   , getTilesPicture
@@ -41,7 +42,7 @@ getTilesPicture tiles = concatMap line [0 .. maxY]
  where
   (V2 maxX maxY) = maximum $ Map.keys tiles
   line y = (concat $ map gt [ (V2 x y) | x <- [0 .. maxX] ]) ++ "\n"
-  gt pos = fromMaybe "?" $ fmap show $ Map.lookup pos tiles
+  gt pos = fromMaybe " " $ fmap show $ Map.lookup pos tiles
 
 
 -- get Position for a unique tile - if not found or not unique errors
