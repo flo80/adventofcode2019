@@ -7,7 +7,9 @@ module AOC2019.Day18
   )
 where
 
+import           Algorithm.Search
 import           AOC.Common
+import           Data.Maybe                               ( fromJust )
 import           Data.Foldable                            ( toList )
 import           Data.Function                            ( on )
 import           Data.List                                ( minimumBy )
@@ -34,7 +36,10 @@ day18run = do
   putStrLn ""
 
 -- Character
-data Player = Player {position:: Position, keys :: Set Char, missingKeys :: Set Position} deriving (Show)
+data Player = Player {position:: Position, keys :: Set Char} deriving (Show, Ord)
+instance Eq Player where
+  (==) a b = position a == position b && keys a == keys b
+
 
 -- World 
 type Tiles = Map Position Tile
@@ -69,76 +74,58 @@ getC (Key  c) = c
 getC (Door c) = c
 getC _        = error "Not a key or door"
 
-isEntrance Entrance = True
-isEntrance _        = False
-isKey (Key _) = True
-isKey _       = False
-isDoor (Door _) = True
-isDoor _        = False
-isWalkable Wall = False
-isWalkable _    = True
-
 
 day18a :: String -> Int
-day18a contents = snd $ findAllKeys tiles player
+day18a contents = fst $ fromJust $ dijkstra getNeighbors
+                                            getCost
+                                            (\a -> allKeys == keys a)
+                                            player
  where
-  tiles               = parseInput contents
-  (keys, missingKeys) = listKeys tiles
-  player              = Player (tiles ?! Entrance) Set.empty missingKeys
+  tiles             = parseInput contents
+  (ks, missingKeys) = listKeys tiles
+  allKeys           = Set.fromList ks
+  allD              = allDistances tiles
+  player            = Player (tiles ?! Entrance) Set.empty
 
+  getCost :: Player -> Player -> Int
+  getCost a b = cost
+   where
+    (cost, _, _) = allD ! (pa, pb)
+    pa           = position a
+    pb           = position b
 
-type Path = [Position]
-findAllKeys :: Tiles -> Player -> (Player, Int)
-findAllKeys tiles player = minimumBy (compare `on` snd) options
- where
-  options = findAllNextSteps tiles allD player 0
-  allD = allDistances tiles
+  getNeighbors :: Player -> [Player]
+  getNeighbors player = map newPlayer possibleNextHops
+   where
+    possibleNextHops :: [((Position, Position), (Int, [Char], [Char]))]
+    possibleNextHops = Map.toList $ Map.filterWithKey
+      (\(a, b) (_, requiredKeys, gainedKeys) ->
+        a
+          == (position player)
+          && any (\k -> Set.member k missingKeys) gainedKeys
+          && all (\k -> Set.member k haveKeys) requiredKeys
+      )
+      allD
+    newPlayer ((_, dest), (_, _, newKeys)) =
+      Player dest (Set.union haveKeys $ Set.fromList newKeys)
+    haveKeys    = keys player
+    missingKeys = Set.difference allKeys haveKeys
 
-findAllNextSteps
-  :: Tiles
-  -> Map (Position, Position) (Int, [Char], [Char])
-  -> Player
-  -> Int
-  -> [(Player, Int)]
-findAllNextSteps tiles allD player@Player {..} prevDist
-  | Set.null missingKeys = [(player, prevDist)]
-  | Map.null possibleNextHops = error "no possible hops"
-  | otherwise = concatMap (\(pl, pa) -> findAllNextSteps tiles allD pl pa)
-                          possibleContinuations
- where
-  possibleContinuations :: [(Player, Int)]
-  possibleContinuations =
-    map createContinuations $ Map.toList $ possibleNextHops
-
-  createContinuations
-    :: ((Position, Position), (Int, [Char], [Char])) -> (Player, Int)
-  createContinuations ((_, x), (dist, _, getK)) =
-    (newPlayer x getK, prevDist + dist)
-
-  possibleNextHops :: Map (Position, Position) (Int, [Char], [Char])
-  possibleNextHops = Map.filterWithKey
-    (\(a, b) (_, reqK, _) ->
-      a
-        == position
-        && Set.member b missingKeys
-        && all (\k -> Set.member k keys) reqK
-    )
-    allD
-
-  newPlayer :: Position -> [Char] -> Player
-  newPlayer x newKeys = Player x ks (Set.delete x missingKeys)
-    where ks = Set.union keys $ Set.fromList newKeys
 
 -- calculate  between a,b, distance, doors (i.e. keys required), keys on the way
 allDistances :: Tiles -> Map (Position, Position) (Int, [Char], [Char])
-allDistances tiles = Map.fromList $ map
-  (\(a, b) -> ((a, b), (getDistance a b, getDoors a b, getKeys a b)))
-  allPairs
+allDistances tiles = Map.fromList
+  $ map (\(a, b) -> ((a, b), (getData a b))) allPairs
  where
-  getPath a b = findShortestPath walkways a b
-  getDistance a b = pred $ length $ getPath a b
-  getDoors a b = map getC $ filter isDoor $ map (\x -> tiles ! x) $ getPath a b
-  getKeys a b = map getC $ filter isKey $ map (\x -> tiles ! x) $ getPath a b
+  getData a b = (cost, doors, keys)
+   where
+      --Position -> Position -> Maybe (cost, [Position])
+    (cost, path) = fromJust $ dijkstra getNeighbors (\_ _ -> 1) (== b) a
+    doors        = map getC $ filter isDoor $ map (\x -> tiles ! x) $ path
+    keys         = map getC $ filter isKey $ map (\x -> tiles ! x) $ path
+
+  getNeighbors pos =
+    filter (\pos -> isWalkable $ tiles ! pos) $ map (+ pos) adjacentPositions
 
   -- could optimize since ways should be symmetrical
   allPairs       = [ (a, b) | a <- allStartpoints, b <- allEndpoints, a /= b ]
@@ -146,6 +133,14 @@ allDistances tiles = Map.fromList $ map
   allEndpoints   = Map.keys $ Map.filter isKey tiles
   walkways       = Map.filter isWalkable tiles
 
+  isEntrance Entrance = True
+  isEntrance _        = False
+  isKey (Key _) = True
+  isKey _       = False
+  isDoor (Door _) = True
+  isDoor _        = False
+  isWalkable Wall = False
+  isWalkable _    = True
 
 day18b :: String -> Int
 day18b = undefined

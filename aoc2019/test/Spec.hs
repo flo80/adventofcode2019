@@ -20,6 +20,6 @@ main = runTestTT $ TestList
   , day14tests
   , day16tests
   , day17tests
---  , day18tests -- day18 doesn't work
+  , day18tests 
   , day20tests
   ]
