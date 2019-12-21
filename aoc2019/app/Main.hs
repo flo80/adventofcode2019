@@ -123,6 +123,7 @@ exit = do
 execute :: Option -> IO ()
 execute o@(Option t Nothing   ) = menu o
 execute o@(Option t (Just fct)) = do
+  setSGR [SetColor Foreground Vivid White]
   printHeader
   -- hSetBuffering stdin LineBuffering
   hSetEcho stdin True
@@ -134,6 +135,7 @@ execute o@(Option t (Just fct)) = do
 
 printHeader :: IO ()
 printHeader = do
+  setSGR [SetColor Foreground Vivid White]
   setCursorPosition 2 0
   clearScreen
   putStrLn "==================="
