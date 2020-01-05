@@ -27,6 +27,7 @@ import           AOC2019.Day4
 import           AOC2019.Day5
 import           AOC2019.Day6
 import           AOC2019.Day7
+import           AOC2019.Day8
 import           AOC2019.Day9
 import           AOC2019.Day10
 import           AOC2019.Day11
@@ -60,7 +61,7 @@ menuItems =
   , (Option "Day 5" (Just day5run)                         , True)
   , (Option "Day 6" (Just day6run)                         , True)
   , (Option "Day 7" (Just day7run)                         , True)
-  , (Option "Day 8" (Nothing)                              , True)
+  , (Option "Day 8" (Just day8run)                         , True)
   , (Option "Day 9" (Just day9run)                         , True)
   , (Option "Day 10" (Just day10run)                       , True)
   , (Option "Day 11" (Just day11run)                       , True)
