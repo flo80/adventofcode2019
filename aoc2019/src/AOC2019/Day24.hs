@@ -1,3 +1,4 @@
+-- part 2 is slow, could optimize by using array like in https://github.com/Noble-Mushtak/Advent-of-Code/blob/master/2019/day24p2.hs
 module AOC2019.Day24
   ( day24a
   , day24b
