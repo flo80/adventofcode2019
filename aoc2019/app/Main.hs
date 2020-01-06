@@ -42,6 +42,8 @@ import           AOC2019.Day19
 import           AOC2019.Day20
 import           AOC2019.Day21
 import           AOC2019.Day22
+import           AOC2019.Day23
+import           AOC2019.Day24
 import           AOC2019.Day25
 
 data Option = Option String (Maybe (IO ()))
@@ -80,8 +82,8 @@ menuItems =
   , (Option "Day 21" (Just day21run)                       , True)
   , (Option "       - interactive" (Just day21_interactive), False)
   , (Option "Day 22" (Just day22run)                       , True)
-  , (Option "Day 23" (Nothing)                             , True)
-  , (Option "Day 24" (Nothing)                             , True)
+  , (Option "Day 23" (Just day23run)                       , True)
+  , (Option "Day 24" (Just day24run)                       , True)
   , (Option "Day 25" (Just day25run)                       , True)
   , (Option "       - Part 1 interactive" (Just day25a_interactive), False)
   ]
