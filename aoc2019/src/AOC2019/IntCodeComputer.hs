@@ -8,6 +8,7 @@ module AOC2019.IntCodeComputer
   , newComputer
   , interactiveComputer
   , runComputer
+  , stepComputer
   , resetOutput
   , addInput
   , Disassembler
@@ -138,12 +139,13 @@ interactiveComputer code inputs =
 
 runComputer :: Process
 runComputer computer@Computer { state = s }
-  | s == Running = runComputer $ processInstruction computer $ fetchInstruction
-    computer
+  | s == Running         = runComputer $ stepComputer computer
   | s == WaitingForInput = computer
-  | s == Halted = computer
-  | s == Crashed = computer
+  | s == Halted          = computer
+  | s == Crashed         = computer
 
+stepComputer :: Process
+stepComputer computer = processInstruction computer $ fetchInstruction computer
 
 -- Process Instructions
 
