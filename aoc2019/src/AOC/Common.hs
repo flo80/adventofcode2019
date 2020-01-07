@@ -7,6 +7,7 @@ module AOC.Common
   , (?!)
   , (?)
   , adjacentPositions
+  , egcd
   )
 where
 
@@ -61,3 +62,10 @@ infix 9 ?!
 infix 9 ?
 (?) :: Eq a => Map Position a -> a -> [Position]
 (?) tiles tile = Map.keys $ Map.filter (== tile) tiles
+
+
+egcd :: (Integral a) => a -> a -> (a, a, a)
+egcd a 0 = (1, 0, a)
+egcd a b = (t, s - q * t, abs g) where
+  (q, r)    = a `quotRem` b
+  (s, t, g) = egcd b r
