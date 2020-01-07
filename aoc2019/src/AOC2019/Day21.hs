@@ -20,9 +20,8 @@ day21run = do
   contents <- readFile "input/day21"
   putStr "Day 21 - Part 1: "
   print $ day21a contents
-  -- putStr "Day 21 - Part 2: "
-  -- print $ day21b contents
-  -- day21a_interactive contents
+  putStr "Day 21 - Part 2: "
+  print $ day21b contents
   putStrLn ""
 
 
@@ -58,6 +57,7 @@ day21b contents = last $ interactiveComputer contents $ encodeInput program
     , "AND C T"
     , "OR T J"
     , "AND D J"
+    , "RUN"
     ]
 
 

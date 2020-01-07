@@ -81,7 +81,7 @@ menuItems =
   , (Option "Day 20" (Just day20run)                       , True)
   , (Option "Day 21" (Just day21run)                       , True)
   , (Option "       - interactive" (Just day21_interactive), False)
-  , (Option "Day 22" (Just day22run)                       , False)
+  , (Option "Day 22" (Just day22run)                       , True)
   , (Option "Day 23" (Just day23run)                       , True)
   , (Option "Day 24" (Just day24run)                       , True)
   , (Option "Day 25" (Just day25run)                       , True)
