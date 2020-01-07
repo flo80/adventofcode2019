@@ -11,7 +11,6 @@ import           AOC2019.Test.Day16
 import           AOC2019.Test.Day17
 import           AOC2019.Test.Day18
 import           AOC2019.Test.Day20
-import           AOC2019.Test.Day22
 import           AOC2019.Test.Day24
 
 main :: IO Counts
@@ -28,6 +27,5 @@ main = runTestTT $ TestList
   , day17tests
   , day18tests
   , day20tests
-  , day22tests
   , day24tests
   ]

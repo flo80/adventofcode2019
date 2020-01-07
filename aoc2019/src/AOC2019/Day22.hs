@@ -11,9 +11,6 @@ module AOC2019.Day22
   )
 where
 
-import           Data.List                                ( sortOn, elemIndex )
-import Data.Maybe (fromJust)
-
 day22run :: IO ()
 day22run = do
   contents <- readFile "input/day22"
@@ -23,37 +20,33 @@ day22run = do
   print $ day22b contents
   putStrLn ""
 
-type Deck = [Int]
-type Shuffle = (Deck -> Deck)
+type Shuffle = (Int -> Int)
 
-shuffle :: Deck -> [(Deck -> Deck)] -> Deck
-shuffle deck moves  = foldl (\d f -> f d) deck moves
+shuffle :: Int -> [Shuffle] -> Int
+shuffle pos moves = foldl (\d f -> f d) pos moves
 
-dealIntoNewStack :: Shuffle
-dealIntoNewStack = reverse
+dealIntoNewStack :: Int -> Shuffle
+dealIntoNewStack decksize pos = (-1) * (pos + 1) `mod` decksize
 
-cutNCards :: Int -> Shuffle
-cutNCards x deck = b ++ a
- where
-  (a, b) = splitAt pos deck
-  pos    = mod x $ length deck
+cutNCards :: Int -> Int -> Shuffle
+cutNCards decksize n pos = (pos - n) `mod` decksize
 
-dealWithIncrementN :: Int -> Shuffle
-dealWithIncrementN x deck =
-  map fst $ sortOn snd $ zip deck $ map (`mod` length deck) $ [0, x ..]
+dealWithIncrementN :: Int -> Int -> Shuffle
+dealWithIncrementN decksize n pos = (n * pos) `mod` decksize
 
 
-parseInput :: String -> [Shuffle]
-parseInput = map (parseLine . words) . lines
+parseInput :: Int -> String -> [Shuffle]
+parseInput decksize input = map (parseLine decksize . words) $ lines input
 
-parseLine :: [String] -> Shuffle
-parseLine ["deal", "into", "new"      , "stack"] = dealIntoNewStack
-parseLine ["deal", "with", "increment", n      ] = dealWithIncrementN $ read n
-parseLine ["cut", n]                             = cutNCards $ read n
+parseLine :: Int -> [String] -> Shuffle
+parseLine decksize ["deal", "into", "new", "stack"] = dealIntoNewStack decksize
+parseLine decksize ["deal", "with", "increment", n] =
+  dealWithIncrementN decksize $ read n
+parseLine decksize ["cut", n] = cutNCards decksize $ read n
 
 
 day22a :: String -> Int
-day22a = succ . fromJust . elemIndex 2019 . shuffle [0..10006] . parseInput 
+day22a = shuffle 2019 . parseInput 10007
 
 day22b :: String -> Int
 day22b contents = undefined
